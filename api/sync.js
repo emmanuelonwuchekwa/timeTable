@@ -1,8 +1,12 @@
 const crypto = require('crypto');
 
 module.exports = async (req, res) => {
-  const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+  const find = (re) => {
+    const k = Object.keys(process.env).find((n) => re.test(n) && !/READ_ONLY/.test(n));
+    return k ? process.env[k] : undefined;
+  };
+  const url = find(/REST_(API_)?URL$/);
+  const token = find(/REST_(API_)?TOKEN$/);
   if (!url || !token) return res.status(500).json({ error: 'Storage not configured' });
 
   const key = req.headers['x-sync-key'];
