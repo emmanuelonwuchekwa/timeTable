@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#f2f2f7">
+<meta name="apple-mobile-web-app-title" content="Planner">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon-180.png">
 <title>Planner</title>
 <style>
 :root{--bg:#f2f2f7;--card:#fff;--ink:#000;--mute:#8e8e93;--line:#c6c6c8;--acc:#007aff;--red:#ff3b30;--grn:#34c759;--fill:#e9e9ee;box-sizing:border-box;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
@@ -60,6 +63,14 @@ h1{font-size:34px;margin:2px 0 0;font-weight:700;letter-spacing:-.4px}.sub{color
 .hint{color:var(--mute);font-size:13px;margin:0 4px 14px}.err{color:var(--red);font-size:14px;min-height:18px;margin:0 4px}
 .dng{display:block;width:100%;background:var(--card);color:var(--red);border-radius:10px;min-height:48px;margin-top:8px}
 .vh{position:absolute;opacity:0;width:0;height:0;pointer-events:none}.lnk{display:block;margin:0 4px 14px;font-size:14px;text-align:left}
+.mg{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-top:6px}
+.mg .h{text-align:center;color:var(--mute);font-size:12px;font-weight:600;padding:4px 0}
+.mg button{min-height:58px;border-radius:10px;color:var(--ink);background:var(--card);display:flex;flex-direction:column;align-items:center;gap:4px;padding-top:7px;font-size:17px}
+.mg button.o{opacity:.4}.mg .td span{color:var(--acc);font-weight:700}.mg .sl{background:var(--acc)}.mg .sl span{color:#fff}
+.dots{display:flex;gap:3px;min-height:6px}.dots i{width:6px;height:6px;border-radius:50%;background:var(--acc)}.dots i.f{background:var(--grn)}.sl .dots i{background:#fff}
+.sw{-webkit-appearance:none;appearance:none;width:51px!important;height:31px;border-radius:16px;background:var(--fill);position:relative;flex:none;cursor:pointer;transition:background .2s}
+.sw::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.3);transition:left .2s}
+.sw:checked{background:var(--grn)}.sw:checked::after{left:22px}
 .pb{display:block;width:100%;background:var(--acc);color:#fff;border-radius:12px;min-height:50px;font-weight:600}
 #as{position:fixed;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom,0px));max-width:544px;margin:0 auto;z-index:12}
 .ag{background:var(--card);border-radius:14px;overflow:hidden;margin-bottom:8px}.ag p{margin:0;padding:12px;text-align:center;color:var(--mute);font-size:13px}
@@ -70,10 +81,11 @@ h1{font-size:34px;margin:2px 0 0;font-weight:700;letter-spacing:-.4px}.sub{color
 </head>
 <body>
 <main>
-<div class="bar"><button id="today">Today</button><button id="pw" aria-label="Previous week">‹</button><button id="nw" aria-label="Next week">›</button><span class="g"></span><button id="sortb">Sort</button><button id="gear">Sync</button></div>
+<div class="bar"><button id="today">Today</button><button id="pw" aria-label="Previous week">‹</button><button id="nw" aria-label="Next week">›</button><span class="g"></span><button id="mb">Month</button><button id="sortb">Sort</button><button id="gear">Settings</button></div>
 <h1 id="dn"></h1><p class="sub" id="dd"></p>
 <button class="ban" id="ban" hidden>Set up sync to see your planner on all your devices. <b style="color:var(--acc)">Set up</b></button>
 <div class="strip" id="strip"></div>
+<div id="mon" hidden></div>
 <div class="sum" id="sum"></div>
 <div id="list"></div>
 </main>
@@ -92,15 +104,18 @@ h1{font-size:34px;margin:2px 0 0;font-weight:700;letter-spacing:-.4px}.sub{color
 <div class="rw"><span>Ends</span><button type="button" class="chip" id="ce"></button></div>
 <div class="wp" id="pE" hidden><div class="wh" id="weh"></div><span class="col">:</span><div class="wh" id="wem"></div></div>
 <div class="rw"><label for="rep">Repeat</label><select id="rep"></select></div>
+<div class="rw"><label for="al">Calendar alert</label><select id="al"><option value="-1">None</option><option value="0">At start</option><option value="5">5 min before</option><option value="10">10 min before</option><option value="15">15 min before</option><option value="30">30 min before</option><option value="60">1 hour before</option></select></div>
 </div>
 <div class="seg"><label><input type="radio" name="rg" value="1" checked>Rigid</label><label><input type="radio" name="rg" value="0">Flexible</label></div>
-<p class="hint">Rigid stays fixed. Flexible can be nudged around rigid blocks. Edits to a repeating block change the whole series.</p>
+<p class="hint">Rigid stays fixed. Flexible can be nudged around rigid blocks. Edits to a repeating block change the whole series. The alert is used when you tap Add to Calendar.</p>
 <div class="err" id="err" role="alert"></div>
+<button type="button" class="dng" id="ics" style="color:var(--acc)" hidden>Add to Calendar</button>
 <button type="button" class="dng" id="dl" hidden>Delete</button>
 </form></section>
 
 <section class="sheet" id="set" role="dialog" aria-modal="true" hidden>
-<div class="nav"><button type="button" class="l" id="sc">Close</button><b>Sync</b><span></span></div>
+<div class="nav"><button type="button" class="l" id="sc">Close</button><b>Settings</b><span></span></div>
+<div class="grp"><div class="rw"><label for="wk">Week starts on Monday</label><input class="sw" type="checkbox" id="wk"></div></div>
 <p class="hint">Your sync key works like a password: anyone with it can see this planner. Tap the field and choose your browser's strong password suggestion, which it saves for you. Use the same key on every device.</p>
 <form id="kf"><input class="vh" type="text" name="username" value="planner-sync" autocomplete="username" tabindex="-1" aria-hidden="true">
 <div class="grp"><div class="rw"><input id="ky" type="password" name="password" autocomplete="new-password" minlength="8" required placeholder="Sync key (8+ characters)" autocapitalize="off" autocorrect="off" spellcheck="false"><button type="button" id="kv">Show</button></div></div>
@@ -119,7 +134,7 @@ const fm=m=>pad(Math.floor(m/60))+':'+pad(m%60);
 const dur=m=>{const h=Math.floor(m/60),r=m%60;return((h?h+'h ':'')+(r?r+'m':''))||'0m'};
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const nid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-let S={b:[],sort:'time',u:0},key='',cur=ds(new Date()),blk=null,T={s:0,e:0},AS=[],drag=0;
+let S={b:[],sort:'time',u:0},key='',cur=ds(new Date()),view='day',blk=null,T={s:0,e:0},AS=[],drag=0;
 try{Object.assign(S,JSON.parse(localStorage.getItem('tt2')||'{}'));key=localStorage.getItem('tt2k')||''}catch(x){}
 const lsave=()=>{try{localStorage.setItem('tt2',JSON.stringify(S))}catch(x){}};
 /* sync */
@@ -134,6 +149,12 @@ function on(b,t){if(t<b.d||(b.x&&b.x.includes(t)))return false;const a=P(b.d),c=
 const REP={none:'',daily:'Daily',weekdays:'Weekdays',weekly:'Weekly',biweekly:'Every 2 weeks',monthly:'Monthly',nth:'Monthly'};
 function repOpts(d,sel){const a=P(d),n=Math.ceil(a.getDate()/7);
  $('rep').innerHTML=[['none','Never'],['daily','Every day'],['weekdays','Weekdays'],['weekly','Every week on '+WD[a.getDay()]],['biweekly','Every 2 weeks'],['monthly','Monthly on day '+a.getDate()],['nth','Monthly on the '+ORD[n-1]+' '+WD[a.getDay()]]].map(([v,t])=>`<option value="${v}">${t}</option>`).join('');$('rep').value=sel||'none'}
+const ws=()=>S.ws?1:0;
+function renderMonth(d,now){const y=d.getFullYear(),m=d.getMonth(),off=(new Date(y,m,1).getDay()-ws()+7)%7,n=Math.ceil((off+new Date(y,m+1,0).getDate())/7)*7;let h='';
+ for(let i=0;i<7;i++)h+=`<div class="h">${WD[(i+ws())%7][0]}</div>`;
+ for(let i=0;i<n;i++){const x=new Date(y,m,1-off+i),s=ds(x),oc=S.b.filter(b=>on(b,s));
+  h+=`<button data-d="${s}" class="${x.getMonth()===m?'':'o'} ${s===cur?'sl':''} ${s===now?'td':''}" aria-label="${WD[x.getDay()]} ${x.getDate()}"><span>${x.getDate()}</span><div class="dots">${oc.slice(0,3).map(b=>`<i class="${b.rg?'':'f'}"></i>`).join('')}</div></button>`}
+ $('mon').innerHTML='<div class="mg">'+h+'</div>'}
 /* list */
 const cmp={time:(a,b)=>a.s-b.s||a.e-b.e,name:(a,b)=>a.b.t.localeCompare(b.b.t),loc:(a,b)=>(a.b.l||'~').localeCompare(b.b.l||'~'),type:(a,b)=>(b.b.rg-a.b.rg)||a.s-b.s,dur:(a,b)=>(b.e-b.s)-(a.e-a.s),custom:(a,b)=>(a.b.o||0)-(b.b.o||0)};
 const items=()=>S.b.filter(b=>on(b,cur)).map(b=>{const o=b.v&&b.v[cur];return{b,s:o?o[0]:b.s,e:o?o[1]:b.e}}).sort(cmp[S.sort]||cmp.time);
@@ -141,8 +162,10 @@ function render(){
  const d=P(cur),now=ds(new Date());
  $('dn').textContent=cur===now?'Today':WD[d.getDay()];
  $('dd').textContent=WD[d.getDay()]+', '+d.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+ $('mb').textContent=view==='month'?'Day':'Month';['strip','sum','list'].forEach(i=>$(i).hidden=view==='month');$('mon').hidden=view!=='month';
  $('ban').hidden=!!key;
- const mon=new Date(d);mon.setDate(d.getDate()-((d.getDay()+6)%7));let st='';
+ if(view==='month'){$('dn').textContent=d.toLocaleDateString('en-GB',{month:'long',year:'numeric'});$('dd').textContent='Tap a day to open it';renderMonth(d,now);return}
+ const mon=new Date(d);mon.setDate(d.getDate()-((d.getDay()-ws()+7)%7));let st='';
  for(let i=0;i<7;i++){const x=new Date(mon);x.setDate(mon.getDate()+i);const s=ds(x);
   st+=`<button data-d="${s}" class="${s===cur?'sl':''} ${s===now?'td':''}" aria-label="${WD[x.getDay()]} ${x.getDate()}"><small>${WD[x.getDay()][0]}</small><b>${x.getDate()}</b><i class="${S.b.some(b=>on(b,s))?'':'o'}"></i></button>`}
  $('strip').innerHTML=st;
@@ -179,10 +202,10 @@ function openSheet(b){blk=b||null;const n=new Date(),s0=n.getHours()*60+n.getMin
  T=b?{s:b.s,e:b.e}:{s:s0,e:Math.min(1439,s0+120)};
  $('t').value=b?b.t:'';$('l').value=b?b.l:'';$('d').value=b?b.d:cur;repOpts($('d').value,b&&b.r);
  document.querySelector(`input[name=rg][value="${b&&!b.rg?0:1}"]`).checked=true;
- $('sh').textContent=b?'Edit block':'New block';$('sv').textContent=b?'Save':'Add';$('dl').hidden=!b;$('err').textContent='';chips();pan('');show('sheet');if(!b)$('t').focus()}
+ $('sh').textContent=b?'Edit block':'New block';$('sv').textContent=b?'Save':'Add';$('dl').hidden=!b;$('ics').hidden=!b;$('al').value=b&&b.a!==undefined?b.a:10;$('err').textContent='';chips();pan('');show('sheet');if(!b)$('t').focus()}
 $('add').onclick=()=>openSheet();$('d').onchange=()=>repOpts($('d').value||cur,$('rep').value);
 $('f').onsubmit=e=>{e.preventDefault();if(T.e<=T.s){$('err').textContent='End time must be after start time.';return}
- const o={t:$('t').value.trim(),l:$('l').value.trim(),d:$('d').value||cur,r:$('rep').value,s:T.s,e:T.e,rg:document.querySelector('input[name=rg]:checked').value==='1'};
+ const o={t:$('t').value.trim(),l:$('l').value.trim(),d:$('d').value||cur,r:$('rep').value,s:T.s,e:T.e,a:+$('al').value,rg:document.querySelector('input[name=rg]:checked').value==='1'};
  if(blk)Object.assign(blk,o);else S.b.push({id:nid(),o:Date.now(),...o});
  cur=o.d;save();closeAll();render()};
 function del(b,mode){const snap=JSON.stringify(S.b);if(mode==='one')(b.x=b.x||[]).push(cur);else S.b=S.b.filter(x=>x.id!==b.id);save();render();toast('Deleted “'+b.t+'”',()=>{S.b=JSON.parse(snap);save();render()})}
@@ -196,18 +219,28 @@ $('list').addEventListener('pointerdown',e=>{const h=e.target.closest('.hd');if(
  h.onpointerup=h.onpointercancel=()=>{h.onpointermove=h.onpointerup=h.onpointercancel=null;const r=c.getBoundingClientRect(),mid=r.top+r.height/2,others=[...$('list').querySelectorAll('.card')].filter(x=>x!==c),at=others.filter(x=>{const q=x.getBoundingClientRect();return q.top+q.height/2<mid}).length,order=others.map(x=>x.dataset.k);
   order.splice(at,0,c.dataset.k);order.forEach((k,i)=>{S.b.find(b=>b.id===k).o=i});drag=1;setTimeout(()=>drag=0,300);save();render()}});
 /* nav, sort, sync UI */
-const go=d=>{cur=d;render()},mv=n=>{const d=P(cur);d.setDate(d.getDate()+n);go(ds(d))};
-$('today').onclick=()=>go(ds(new Date()));$('pw').onclick=()=>mv(-7);$('nw').onclick=()=>mv(7);
+const go=d=>{cur=d;render()},mv=n=>{const d=P(cur);d.setDate(d.getDate()+n);go(ds(d))},mm=n=>{const d=P(cur),t=new Date(d.getFullYear(),d.getMonth()+n,1);t.setDate(Math.min(d.getDate(),new Date(t.getFullYear(),t.getMonth()+1,0).getDate()));go(ds(t))};
+$('today').onclick=()=>go(ds(new Date()));$('pw').onclick=()=>view==='month'?mm(-1):mv(-7);$('nw').onclick=()=>view==='month'?mm(1):mv(7);
 $('strip').onclick=e=>{const b=e.target.closest('[data-d]');if(b)go(b.dataset.d)};
 $('sortb').onclick=()=>sheetA('Sort by',[['time','Time'],['name','Name'],['loc','Location'],['type','Type (rigid first)'],['dur','Longest first'],['custom','Custom order (drag to arrange)']].map(([k,t])=>({t,ck:S.sort===k,f:()=>{if(k==='custom'&&S.sort!=='custom')items().forEach((x,i)=>x.b.o=i);S.sort=k;save();render()}})));
-const openSync=()=>{$('ky').value=key;$('ky').autocomplete=key?'current-password':'new-password';$('ku').hidden=!!key;show('set')};$('gear').onclick=openSync;$('ban').onclick=openSync;
+const openSync=()=>{$('wk').checked=!!S.ws;$('ky').value=key;$('ky').autocomplete=key?'current-password':'new-password';$('ku').hidden=!!key;show('set')};$('gear').onclick=openSync;$('ban').onclick=openSync;
 $('kf').onsubmit=e=>{e.preventDefault();const k=$('ky').value.trim();if(k.length<8){setSt('Key must be at least 8 characters.');return}key=k;try{localStorage.setItem('tt2k',k)}catch(x){}setSt('Syncing…');render();pull()};
 $('kv').onclick=()=>{const p=$('ky').type==='password';$('ky').type=p?'text':'password';$('kv').textContent=p?'Hide':'Show'};
 $('ku').onclick=()=>{$('ky').autocomplete='current-password';$('ky').value='';$('ky').blur();setTimeout(()=>$('ky').focus(),60)};
+$('mb').onclick=()=>{view=view==='month'?'day':'month';render()};
+$('mon').onclick=e=>{const b=e.target.closest('[data-d]');if(b){cur=b.dataset.d;view='day';render()}};
+$('wk').onchange=()=>{S.ws=$('wk').checked?1:0;save();render()};
+$('ics').onclick=()=>{const b=blk;if(!b)return;const z=(d,m)=>d.replace(/-/g,'')+'T'+pad(Math.floor(m/60))+pad(m%60)+'00',q=t=>String(t).replace(/([,;\\])/g,'\\$1'),D=['SU','MO','TU','WE','TH','FR','SA'],a=P(b.d),
+ R={daily:'FREQ=DAILY',weekdays:'FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR',weekly:'FREQ=WEEKLY',biweekly:'FREQ=WEEKLY;INTERVAL=2',monthly:'FREQ=MONTHLY',nth:'FREQ=MONTHLY;BYDAY='+Math.ceil(a.getDate()/7)+D[a.getDay()]},
+ L=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Planner//EN','BEGIN:VEVENT','UID:'+b.id+'@planner','DTSTAMP:'+new Date().toISOString().replace(/[-:]/g,'').slice(0,15)+'Z','DTSTART:'+z(b.d,b.s),'DTEND:'+z(b.d,b.e),'SUMMARY:'+q(b.t)];
+ if(b.l)L.push('LOCATION:'+q(b.l));if(R[b.r])L.push('RRULE:'+R[b.r]);(b.x||[]).forEach(x=>L.push('EXDATE:'+z(x,b.s)));
+ if(b.a>=0)L.push('BEGIN:VALARM','TRIGGER:'+(b.a?'-PT'+b.a+'M':'PT0M'),'ACTION:DISPLAY','DESCRIPTION:'+q(b.t),'END:VALARM');L.push('END:VEVENT','END:VCALENDAR');
+ const u=URL.createObjectURL(new Blob([L.join('\r\n')],{type:'text/calendar'})),l=document.createElement('a');l.href=u;l.download=(b.t.replace(/[^\w]+/g,'-')||'event')+'.ics';document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)};
+if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)pull()});
 let sx=null,sy=null;
 document.addEventListener('touchstart',e=>{if(!$('ov').hidden||e.target.closest('.hd,.strip')){sx=null;return}sx=e.touches[0].clientX;sy=e.touches[0].clientY},{passive:true});
-document.addEventListener('touchend',e=>{if(sx===null)return;const dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;sx=null;if(Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*2)mv(dx<0?1:-1)},{passive:true});
+document.addEventListener('touchend',e=>{if(sx===null)return;const dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;sx=null;if(Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*2)(view==='month'?mm:mv)(dx<0?1:-1)},{passive:true});
 render();pull();
 </script>
 </body>
