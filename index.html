@@ -59,6 +59,7 @@ h1{font-size:34px;margin:2px 0 0;font-weight:700;letter-spacing:-.4px}.sub{color
 .seg label:has(:checked){background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.25);font-weight:600}
 .hint{color:var(--mute);font-size:13px;margin:0 4px 14px}.err{color:var(--red);font-size:14px;min-height:18px;margin:0 4px}
 .dng{display:block;width:100%;background:var(--card);color:var(--red);border-radius:10px;min-height:48px;margin-top:8px}
+.vh{position:absolute;opacity:0;width:0;height:0;pointer-events:none}.lnk{display:block;margin:0 4px 14px;font-size:14px;text-align:left}
 .pb{display:block;width:100%;background:var(--acc);color:#fff;border-radius:12px;min-height:50px;font-weight:600}
 #as{position:fixed;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom,0px));max-width:544px;margin:0 auto;z-index:12}
 .ag{background:var(--card);border-radius:14px;overflow:hidden;margin-bottom:8px}.ag p{margin:0;padding:12px;text-align:center;color:var(--mute);font-size:13px}
@@ -100,9 +101,11 @@ h1{font-size:34px;margin:2px 0 0;font-weight:700;letter-spacing:-.4px}.sub{color
 
 <section class="sheet" id="set" role="dialog" aria-modal="true" hidden>
 <div class="nav"><button type="button" class="l" id="sc">Close</button><b>Sync</b><span></span></div>
-<p class="hint">Use the same sync key on every device. Anyone with the key can see this planner, so make it long and private.</p>
-<div class="grp"><div class="rw"><input id="ky" placeholder="Sync key (8+ characters)" autocapitalize="off" autocorrect="off" spellcheck="false"></div></div>
-<button class="pb" id="ks">Save and sync</button><p class="hint" id="st" style="margin-top:10px"></p>
+<p class="hint">Your sync key works like a password: anyone with it can see this planner. Tap the field and choose your browser's strong password suggestion, which it saves for you. Use the same key on every device.</p>
+<form id="kf"><input class="vh" type="text" name="username" value="planner-sync" autocomplete="username" tabindex="-1" aria-hidden="true">
+<div class="grp"><div class="rw"><input id="ky" type="password" name="password" autocomplete="new-password" minlength="8" required placeholder="Sync key (8+ characters)" autocapitalize="off" autocorrect="off" spellcheck="false"><button type="button" id="kv">Show</button></div></div>
+<button type="button" class="lnk" id="ku">Already have a key? Fill from saved passwords</button>
+<button class="pb" id="ks" type="submit">Save and sync</button></form><p class="hint" id="st" style="margin-top:10px"></p>
 </section>
 
 <div id="as" hidden><div class="ag" id="asb"></div><div class="ag"><button id="asx">Cancel</button></div></div>
@@ -197,8 +200,10 @@ const go=d=>{cur=d;render()},mv=n=>{const d=P(cur);d.setDate(d.getDate()+n);go(d
 $('today').onclick=()=>go(ds(new Date()));$('pw').onclick=()=>mv(-7);$('nw').onclick=()=>mv(7);
 $('strip').onclick=e=>{const b=e.target.closest('[data-d]');if(b)go(b.dataset.d)};
 $('sortb').onclick=()=>sheetA('Sort by',[['time','Time'],['name','Name'],['loc','Location'],['type','Type (rigid first)'],['dur','Longest first'],['custom','Custom order (drag to arrange)']].map(([k,t])=>({t,ck:S.sort===k,f:()=>{if(k==='custom'&&S.sort!=='custom')items().forEach((x,i)=>x.b.o=i);S.sort=k;save();render()}})));
-const openSync=()=>{$('ky').value=key;show('set')};$('gear').onclick=openSync;$('ban').onclick=openSync;
-$('ks').onclick=()=>{const k=$('ky').value.trim();if(k.length<8){setSt('Key must be at least 8 characters.');return}key=k;try{localStorage.setItem('tt2k',k)}catch(x){}setSt('Syncing…');render();pull()};
+const openSync=()=>{$('ky').value=key;$('ky').autocomplete=key?'current-password':'new-password';$('ku').hidden=!!key;show('set')};$('gear').onclick=openSync;$('ban').onclick=openSync;
+$('kf').onsubmit=e=>{e.preventDefault();const k=$('ky').value.trim();if(k.length<8){setSt('Key must be at least 8 characters.');return}key=k;try{localStorage.setItem('tt2k',k)}catch(x){}setSt('Syncing…');render();pull()};
+$('kv').onclick=()=>{const p=$('ky').type==='password';$('ky').type=p?'text':'password';$('kv').textContent=p?'Hide':'Show'};
+$('ku').onclick=()=>{$('ky').autocomplete='current-password';$('ky').value='';$('ky').blur();setTimeout(()=>$('ky').focus(),60)};
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)pull()});
 let sx=null,sy=null;
 document.addEventListener('touchstart',e=>{if(!$('ov').hidden||e.target.closest('.hd,.strip')){sx=null;return}sx=e.touches[0].clientX;sy=e.touches[0].clientY},{passive:true});
